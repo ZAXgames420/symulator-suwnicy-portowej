@@ -224,7 +224,7 @@ def main():
     # Inicjalizacja łodzi na GPU
     id_lodzi = None
     try:
-        dane = wczytaj_stl('"models/CargoShip.stl"')
+        dane = wczytaj_stl('models/CargoShip.stl')
         id_lodzi = przygotuj_model_gpu(dane)
     except:
         print("Nie znaleziono pliku CargoShip.stl!")
@@ -232,7 +232,7 @@ def main():
     # Inicjalizacja kontenera na GPU
     id_kontenera = None
     try:
-        dane = wczytaj_stl('"models/Container.stl"')
+        dane = wczytaj_stl('models/Container.stl')
         id_kontenera = przygotuj_model_gpu(dane)
     except:
         print("Nie znaleziono pliku Container.stl!")
