@@ -161,6 +161,7 @@ def rysuj_niebo_i_slonce():
 
 def main():
     suwnica_x = 0.0
+    pociag_x = 0.0
 
     pygame.init()
     display = (1920, 1080)
@@ -273,6 +274,11 @@ def main():
         if keys[K_RIGHT]:
             if(suwnica_x>-20):
                 suwnica_x -= 0.1
+        #pociąg w przód i tył
+        if keys[K_n]:
+            pociag_x += 0.1
+        if keys[K_m]:
+            pociag_x -= 0.1
 
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -282,7 +288,24 @@ def main():
         glRotatef(rot_y, 0, 1, 0)
         glTranslatef(-cam_x, -cam_y, -cam_z)
 
-        # === SZKIELET KONSTRUKCJI ===
+        #Pociąg
+        glPushMatrix() 
+        glTranslatef(pociag_x, 0, 0)
+        #ciufcia
+        rysuj_obrocony_prostopadloscian(23.375, 0.5, 12.5, 15, 5, 5, 0.9, 0.1, 0.1)
+        #wagony
+        for nr in range(0, 3):
+            przes=nr*15.875
+            rysuj_obrocony_prostopadloscian(7.5 - przes, 0.5, 12.5, 15, 1, 5, 0.0, 0.0, 0.5)
+            rysuj_obrocony_prostopadloscian(15.5 - przes, 0.75, 12.5, 1, 0.5, 0.5, 0.1, 0.1, 0.1)
+
+        glPopMatrix()
+
+        #tory
+        rysuj_obrocony_prostopadloscian(0, 0.1, 14.4, 200, 0.2, 0.2, 0, 0, 0)
+        rysuj_obrocony_prostopadloscian(0, 0.1, 10.6, 200, 0.2, 0.2, 0, 0, 0)
+
+        # === SZKIELET KONSTRUKCJI DŹWIGU ===
         glPushMatrix() 
         glTranslatef(suwnica_x, 0, 0)
 
@@ -364,12 +387,12 @@ def main():
 
         glPopMatrix()
 
-        #===Plansza===
+        #=== LĄD ===
         glLightfv(GL_LIGHT0, GL_AMBIENT, [0.3, 0.3, 0.3, 1])
-        rysuj_obrocony_prostopadloscian(7.5, -30, -45, 200, 30, 150, 0.8, 0.8, 0.8)
-        rysuj_obrocony_prostopadloscian(7.5, 0, 28, 200, 2, 4, 0.6, 0.6, 0.6)
+        rysuj_obrocony_prostopadloscian(0, -30, -45, 200, 30, 150, 0.8, 0.8, 0.8)
+        rysuj_obrocony_prostopadloscian(0, 0, 28, 200, 2, 4, 0.6, 0.6, 0.6)
 
-        #szyny
+        #szyny suwnicy
         rysuj_obrocony_prostopadloscian(30, 0, 0, 120, 0.1, 1, 0.3, 0, 0)
         rysuj_obrocony_prostopadloscian(30, 0, 25, 120, 0.1, 1, 0.3, 0, 0)
         
