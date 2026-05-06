@@ -23,6 +23,8 @@ kolory_kontenerow = [(1.0, 0.1, 0.1), (0.1, 0.3, 0.8), (0.1, 0.6, 0.2), (1.0, 0.
 
 kolory=[]
 
+stala_falowania = 0.2
+
 # Generujemy listę wszystkich par (x, z, y)
 siatka_kontenerow = []
 for oy in wspolrzedne_y:
@@ -134,7 +136,7 @@ class WodaGPU:
     def rysuj(self, czas, r, g, b):
         x_vals = self.vertices[:,:,:,0]
         z_vals = self.vertices[:,:,:,2]
-        self.vertices[:,:,:,1] = np.sin(x_vals * 0.15 + czas) * 0.5 + np.cos(z_vals * 0.2 + czas * 0.8) * 0.5
+        self.vertices[:,:,:,1] = np.sin(x_vals * 0.15 + czas) * stala_falowania + np.cos(z_vals * 0.2 + czas * 0.8) * 0.2
         
         glDisable(GL_LIGHTING)
         glColor4f(r, g, b, 0.9)
@@ -163,6 +165,7 @@ def main():
     suwnica_x = 0.0
     pociag_x = 0.0
     wyciag_z = 0.0
+    zejscie_y = 0
 
     pygame.init()
     display = (1920, 1080)
@@ -271,10 +274,10 @@ def main():
         #suwnica prawo lewo
         if keys[K_LEFT]:
             if(suwnica_x<70):
-                suwnica_x += 0.1
+                suwnica_x += 0.05
         if keys[K_RIGHT]:
             if(suwnica_x>-20):
-                suwnica_x -= 0.1
+                suwnica_x -= 0.05
         #pociąg w przód i tył
         if keys[K_n]:
             pociag_x += 0.1
@@ -287,7 +290,12 @@ def main():
         if keys[K_x]:
             if(wyciag_z>-20):
                 wyciag_z -= 0.1
-
+        if keys[K_v]:
+            if(zejscie_y<50):
+                zejscie_y += 0.1
+        if keys[K_c]:
+            if(zejscie_y>0):
+                zejscie_y -= 0.1
 
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -321,10 +329,17 @@ def main():
         glPushMatrix() 
         glTranslatef(0, 0, wyciag_z)
         # wyciąg
-        zejscie = 10
         rysuj_obrocony_prostopadloscian(7.5, 48, 28, 10, 3, 7.5, 0.6, 0.6, 0.6)
-        for i in range(1, zejscie):
-            rysuj_obrocony_prostopadloscian(7.5, 48-i, 28, 0.3, 0.1, 0.3, 0, 0.9, 0.9)
+        #lina
+        for i in range(1, int(zejscie_y*10)):
+            if i % 10 == 0:
+                rysuj_obrocony_prostopadloscian(7.5, 48 - (i/10), 28, 0.3, 0.5, 0.3, 0, 0.9, 0.9)
+        
+        #chwytak
+        glPushMatrix() 
+        glTranslatef(0, -zejscie_y, 0)
+        rysuj_obrocony_prostopadloscian(7.5, 46, 28, 10, 3, 7.5, 0.9, 0.2, 0.6)
+        glPopMatrix()
 
         glPopMatrix()
 
@@ -438,7 +453,7 @@ def main():
 
         #łódź
         if id_lodzi is not None:
-            bujanie = math.sin(t * 0.5) * 0.5
+            bujanie = math.sin(t * 0.5) * stala_falowania 
             rysuj_model_gpu(id_lodzi, 30, -5 + bujanie, 80, 0.5, 0.3, 0.1, skala=0.8, rot_x=-90, rot_z=90)
             i=0
             if id_kontenera is not None:
