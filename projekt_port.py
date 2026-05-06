@@ -162,6 +162,7 @@ def rysuj_niebo_i_slonce():
 def main():
     suwnica_x = 0.0
     pociag_x = 0.0
+    wyciag_z = 0.0
 
     pygame.init()
     display = (1920, 1080)
@@ -279,6 +280,14 @@ def main():
             pociag_x += 0.1
         if keys[K_m]:
             pociag_x -= 0.1
+        #wyciąg w przód i tył
+        if keys[K_z]:
+            if(wyciag_z<60):
+                wyciag_z += 0.1
+        if keys[K_x]:
+            if(wyciag_z>-20):
+                wyciag_z -= 0.1
+
 
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -294,7 +303,7 @@ def main():
         #ciufcia
         rysuj_obrocony_prostopadloscian(23.375, 0.5, 12.5, 15, 5, 5, 0.9, 0.1, 0.1)
         #wagony
-        for nr in range(0, 3):
+        for nr in range(0, 10):
             przes=nr*15.875
             rysuj_obrocony_prostopadloscian(7.5 - przes, 0.5, 12.5, 15, 1, 5, 0.0, 0.0, 0.5)
             rysuj_obrocony_prostopadloscian(15.5 - przes, 0.75, 12.5, 1, 0.5, 0.5, 0.1, 0.1, 0.1)
@@ -308,6 +317,16 @@ def main():
         # === SZKIELET KONSTRUKCJI DŹWIGU ===
         glPushMatrix() 
         glTranslatef(suwnica_x, 0, 0)
+
+        glPushMatrix() 
+        glTranslatef(0, 0, wyciag_z)
+        # wyciąg
+        zejscie = 10
+        rysuj_obrocony_prostopadloscian(7.5, 48, 28, 10, 3, 7.5, 0.6, 0.6, 0.6)
+        for i in range(1, zejscie):
+            rysuj_obrocony_prostopadloscian(7.5, 48-i, 28, 0.3, 0.1, 0.3, 0, 0.9, 0.9)
+
+        glPopMatrix()
 
         # Kolumny główne
         rysuj_obrocony_prostopadloscian(0, 0, 0, 1, 52, 1, 0.0, 0.0, 0.5)
