@@ -166,6 +166,15 @@ def main():
     pociag_x = 0.0
     wyciag_z = 0.0
     zejscie_y = 0
+    
+    chwytak_x = 7.5
+    chwytak_y = 46.0
+    chwytak_z = 28.0
+    ##!!!!!!!!!!!!!!!!!!!!!!!!##
+    szer_kontenera = 4.0        # Szerokość kontenera (wzdłuż osi X) DO SPRAWDZENIA PÓŹNIEJ
+    ##!!!!!!!!!!!!!!!!!!!!!!!!##
+    wys_kontenera = 4.345       # Wysokość kontenera (wzdłuż osi Y)
+    dl_kontenera = 6.9          # Długość kontenera (wzdłuż osi Z)
 
     pygame.init()
     display = (1920, 1080)
@@ -255,7 +264,7 @@ def main():
 
         keys = pygame.key.get_pressed()
         rad = math.radians(rot_y)
-        spd = 0.8 # Przyspieszyłem kamerę dla wygody
+        spd = 0.8 # Prędkość kamery
         
         if keys[K_w] or keys[K_UP]:
             cam_x += math.sin(rad) * spd
@@ -271,31 +280,132 @@ def main():
             cam_z += math.sin(rad) * spd
         if keys[K_SPACE]:  cam_y += spd
         if keys[K_LSHIFT]: cam_y -= spd
-        #suwnica prawo lewo
-        if keys[K_LEFT]:
-            if(suwnica_x<70):
-                suwnica_x += 0.05
-        if keys[K_RIGHT]:
-            if(suwnica_x>-20):
-                suwnica_x -= 0.05
+
+        #na kliknięciu "u" wypisujemy wszystkie pozycje i kolory kontenerów (robi sie to 2 razy)
+        klikniete_u = False
+        if keys[K_u]:
+            if not klikniete_u:
+                klikniete_u = True
+                for i, (k_x, k_z, k_y) in enumerate(siatka_kontenerow):
+                        # Pobieramy kolor przypisany do kontenera (jeśli istnieje)
+                        kolor = kolory[i] if i < len(kolory) else (0, 0, 0)
+                        print(f"Kontener {i}: Pozycja X={k_x:.2f}, Z={k_z:.2f}, Y={k_y:.2f} | Kolor: {kolor}")
+
         #pociąg w przód i tył
         if keys[K_n]:
             pociag_x += 0.1
         if keys[K_m]:
             pociag_x -= 0.1
-        #wyciąg w przód i tył
+
+        ##STEROWANIE SUWNICĄ##
+        bujanie = math.sin(t * 0.5) * stala_falowania
+
+        # suwnica w lewo
+        if keys[K_LEFT]:
+            legalny_ruch = True
+            przyszle_chwytak_x = chwytak_x + 0.05  
+            
+            for kx, kz, ky in siatka_kontenerow:
+                # Obliczamy realną wysokość, na której wyrenderowany jest kontener
+                realne_kontener_y = 8.2 + bujanie + ky
+                
+                # Tolerancja dopasowana do rzeczywistych wymiarów kontenera (X, Z, Y)
+                if abs(kx - przyszle_chwytak_x) < szer_kontenera and abs(kz - chwytak_z) < dl_kontenera and abs(realne_kontener_y - chwytak_y) < wys_kontenera + bujanie:
+                    legalny_ruch = False
+                    break
+                    
+            if suwnica_x < 70 and legalny_ruch:
+                suwnica_x += 0.05
+                chwytak_x += 0.05
+
+        # suwnica w prawo
+        if keys[K_RIGHT]:
+            legalny_ruch = True
+            przyszle_chwytak_x = chwytak_x - 0.05 
+            
+            for kx, kz, ky in siatka_kontenerow:
+                realne_kontener_y = 8.2 + bujanie + ky
+                
+                if abs(kx - przyszle_chwytak_x) < szer_kontenera and abs(kz - chwytak_z) < dl_kontenera and abs(realne_kontener_y - chwytak_y) < wys_kontenera + bujanie:
+                    legalny_ruch = False
+                    break
+                    
+            if suwnica_x > -20 and legalny_ruch:
+                suwnica_x -= 0.05
+                chwytak_x -= 0.05
+        # --- WYCIĄG W PRZÓD I TYŁ ---
+        
+        # Ruch w przód (Klawisz Z)
         if keys[K_z]:
-            if(wyciag_z<60):
+            # 1. WYMUSZAMY AKTUALNĄ POZYCJĘ PRZED TESTEM
+            chwytak_x = 7.5 + suwnica_x
+            chwytak_z = 28.0 + wyciag_z
+            chwytak_y = 46.0 - zejscie_y
+            
+            legalny_ruch = True
+            przyszle_chwytak_z = chwytak_z + 0.1  
+            
+            for kx, kz, ky in siatka_kontenerow:
+                realne_kontener_y = 8.2 + bujanie + ky
+                
+                if abs(kx - chwytak_x) < szer_kontenera and abs(kz - przyszle_chwytak_z) < dl_kontenera and abs(realne_kontener_y - chwytak_y) < wys_kontenera + bujanie:
+                    legalny_ruch = False
+                    break
+                    
+            if wyciag_z < 60 and legalny_ruch:
                 wyciag_z += 0.1
+                chwytak_z += 0.1
+
+        # Ruch w tył (Klawisz X)
         if keys[K_x]:
-            if(wyciag_z>-20):
+            # 1. WYMUSZAMY AKTUALNĄ POZYCJĘ PRZED TESTEM
+            chwytak_x = 7.5 + suwnica_x
+            chwytak_z = 28.0 + wyciag_z
+            chwytak_y = 46.0 - zejscie_y
+            
+            legalny_ruch = True
+            przyszle_chwytak_z = chwytak_z - 0.1
+            
+            for kx, kz, ky in siatka_kontenerow:
+                realne_kontener_y = 8.2 + bujanie + ky
+                
+                if abs(kx - chwytak_x) < szer_kontenera and abs(kz - przyszle_chwytak_z) < dl_kontenera and abs(realne_kontener_y - chwytak_y) < wys_kontenera + bujanie:
+                    legalny_ruch = False
+                    break
+                    
+            if wyciag_z > -20 and legalny_ruch:
                 wyciag_z -= 0.1
+                chwytak_z -= 0.1
+        # --- OPUSZCZANIE I PODNOSZENIE CHWYTAKA ---
+        
+        # Opuszczanie liny (Klawisz V)
         if keys[K_v]:
-            if(zejscie_y<50):
+            # 1. Wymuszamy aktualną pozycję przed testem kolizji
+            chwytak_x = 7.5 + suwnica_x
+            chwytak_z = 28.0 + wyciag_z
+            chwytak_y = 46.0 - zejscie_y
+            
+            legalny_ruch = True
+            przyszle_chwytak_y = chwytak_y - 0.1  # Sprawdzamy pozycję PO OPUSZCZENIU liny
+            
+            for kx, kz, ky in siatka_kontenerow:
+                # Realna wysokość kontenera na falującym statku
+                realne_kontener_y = 8.2 + bujanie + ky
+                
+                # Test kolizji: sprawdzamy czy chwytak po ruchu w dół nie wejdzie w kontener
+                if abs(kx - chwytak_x) < szer_kontenera and abs(kz - chwytak_z) < dl_kontenera and abs(realne_kontener_y - przyszle_chwytak_y) < wys_kontenera + bujanie:
+                    legalny_ruch = False
+                    break
+                    
+            if zejscie_y < 50 and legalny_ruch:
                 zejscie_y += 0.1
+                chwytak_y -= 0.1
+
+        # Podnoszenie liny (Klawisz C) - ruch w górę jest zawsze bezpieczny od kontenerów
         if keys[K_c]:
-            if(zejscie_y>0):
+            if zejscie_y > 0:
                 zejscie_y -= 0.1
+                chwytak_y += 0.1
 
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -338,7 +448,12 @@ def main():
         #chwytak
         glPushMatrix() 
         glTranslatef(0, -zejscie_y, 0)
-        rysuj_obrocony_prostopadloscian(7.5, 46, 28, 10, 3, 7.5, 0.9, 0.2, 0.6)
+        for kx, kz, ky in siatka_kontenerow:
+            realne_kontener_y = 8.2 + bujanie + ky
+            if(abs(realne_kontener_y - chwytak_y) < wys_kontenera+bujanie and abs(kx - chwytak_x) < szer_kontenera and abs(kz - chwytak_z) < dl_kontenera):
+                rysuj_obrocony_prostopadloscian(7.5, 46+bujanie, 28, 10, 3, 5.5, 0.9, 0.2, 0.6)
+            else:
+                rysuj_obrocony_prostopadloscian(7.5, 46, 28, 10, 3, 5.5, 0.9, 0.2, 0.6)
         glPopMatrix()
 
         glPopMatrix()
