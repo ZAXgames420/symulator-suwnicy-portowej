@@ -306,10 +306,10 @@ def main():
             przyszle_chwytak_x = chwytak_x + 0.05  
             
             for kx, kz, ky in siatka_kontenerow:
-                # Obliczamy realną wysokość, na której wyrenderowany jest kontener
+                
                 realne_kontener_y = 8.2 + bujanie + ky
                 
-                # Tolerancja dopasowana do rzeczywistych wymiarów kontenera (X, Z, Y)
+                
                 if abs(kx - przyszle_chwytak_x) < szer_kontenera and abs(kz - chwytak_z) < dl_kontenera and abs(realne_kontener_y - chwytak_y) < wys_kontenera + bujanie:
                     legalny_ruch = False
                     break
@@ -337,7 +337,7 @@ def main():
         
         # Ruch w przód (Klawisz Z)
         if keys[K_z]:
-            # 1. WYMUSZAMY AKTUALNĄ POZYCJĘ PRZED TESTEM
+           
             chwytak_x = 7.5 + suwnica_x
             chwytak_z = 28.0 + wyciag_z
             chwytak_y = 46.0 - zejscie_y
@@ -358,7 +358,7 @@ def main():
 
         # Ruch w tył (Klawisz X)
         if keys[K_x]:
-            # 1. WYMUSZAMY AKTUALNĄ POZYCJĘ PRZED TESTEM
+            
             chwytak_x = 7.5 + suwnica_x
             chwytak_z = 28.0 + wyciag_z
             chwytak_y = 46.0 - zejscie_y
@@ -380,20 +380,19 @@ def main():
         
         # Opuszczanie liny (Klawisz V)
         if keys[K_v]:
-            # 1. Wymuszamy aktualną pozycję przed testem kolizji
+            
             chwytak_x = 7.5 + suwnica_x
             chwytak_z = 28.0 + wyciag_z
             chwytak_y = 46.0 - zejscie_y
             
             legalny_ruch = True
-            przyszle_chwytak_y = chwytak_y - 0.1  # Sprawdzamy pozycję PO OPUSZCZENIU liny
+            przyszle_chwytak_y = chwytak_y - 0.1  
             
             for kx, kz, ky in siatka_kontenerow:
-                # Realna wysokość kontenera na falującym statku
-                realne_kontener_y = 8.2 + bujanie + ky
                 
-                # Test kolizji: sprawdzamy czy chwytak po ruchu w dół nie wejdzie w kontener
-                if abs(kx - chwytak_x) < szer_kontenera and abs(kz - chwytak_z) < dl_kontenera and abs(realne_kontener_y - przyszle_chwytak_y) < wys_kontenera + bujanie:
+                realne_kontener_y = 8.2 + bujanie + ky
+            
+                if abs(kx - chwytak_x) < szer_kontenera and abs(kz - chwytak_z) < dl_kontenera and abs(realne_kontener_y - przyszle_chwytak_y) < wys_kontenera + bujanie + 0.4:
                     legalny_ruch = False
                     break
                     
@@ -401,7 +400,6 @@ def main():
                 zejscie_y += 0.1
                 chwytak_y -= 0.1
 
-        # Podnoszenie liny (Klawisz C) - ruch w górę jest zawsze bezpieczny od kontenerów
         if keys[K_c]:
             if zejscie_y > 0:
                 zejscie_y -= 0.1
