@@ -29,12 +29,14 @@ def wczytaj_stl(sciezka):
     vertices = moj_mesh.vectors
     return vertices
 
-def przygotuj_model_gpu(vertices):
+def przygotuj_model(vertices):
+    # Tworzy listę wyświetlania OpenGL w pamięci GPU
     lista_id = glGenLists(1)
     glNewList(lista_id, GL_COMPILE)
     glBegin(GL_TRIANGLES)
     for triangle in vertices:
         v1, v2, v3 = triangle[0], triangle[1], triangle[2]
+        #Obliczanie wektora normalnego dla oswietlenia 3d
         normal = np.cross(v2 - v1, v3 - v1)
         norm = np.linalg.norm(normal)
         if norm > 0:
@@ -45,7 +47,7 @@ def przygotuj_model_gpu(vertices):
     glEndList()
     return lista_id
 
-def rysuj_model_gpu(lista_id, x, y, z, r, g, b, skala=1.0, rot_y=0, rot_x=0, rot_z=0):
+def rysuj_model(lista_id, x, y, z, r, g, b, skala=1.0, rot_y=0, rot_x=0, rot_z=0):
     glPushMatrix()
     glTranslatef(x, y, z)
     glRotatef(rot_x, 1, 0, 0)
@@ -57,13 +59,13 @@ def rysuj_model_gpu(lista_id, x, y, z, r, g, b, skala=1.0, rot_y=0, rot_x=0, rot
     glCallList(lista_id)
     glPopMatrix()
 
-# --- Display List dla prostopadłościanów ---
-id_szescianu_gpu = None
+#model sześcianu
+id_szescianu = None
 
-def inicjalizuj_szescian_gpu():
-    global id_szescianu_gpu
-    id_szescianu_gpu = glGenLists(1)
-    glNewList(id_szescianu_gpu, GL_COMPILE)
+def inicjalizuj_szescian():
+    global id_szescianu
+    id_szescianu = glGenLists(1)
+    glNewList(id_szescianu, GL_COMPILE)
     v = [
         [-1,-1,-1], [1,-1,-1], [1,1,-1], [-1,1,-1],
         [-1,-1,1], [1,-1,1], [1,1,1], [-1,1,1]
@@ -71,18 +73,24 @@ def inicjalizuj_szescian_gpu():
     f = [(0,1,2,3), (4,5,6,7), (0,4,5,1), (2,3,7,6), (0,3,7,4), (1,2,6,5)]
     glBegin(GL_QUADS)
     for face in f:
-        if face == (0,1,2,3): glNormal3f(0,0,-1)
-        elif face == (4,5,6,7): glNormal3f(0,0,1)
-        elif face == (0,4,5,1): glNormal3f(0,-1,0)
-        elif face == (2,3,7,6): glNormal3f(0,1,0)
-        elif face == (0,3,7,4): glNormal3f(-1,0,0)
-        elif face == (1,2,6,5): glNormal3f(1,0,0)
+        if face == (0,1,2,3): 
+            glNormal3f(0,0,-1)
+        elif face == (4,5,6,7): 
+            glNormal3f(0,0,1)
+        elif face == (0,4,5,1): 
+            glNormal3f(0,-1,0)
+        elif face == (2,3,7,6): 
+            glNormal3f(0,1,0)
+        elif face == (0,3,7,4): 
+            glNormal3f(-1,0,0)
+        elif face == (1,2,6,5): 
+            glNormal3f(1,0,0)
         for i in face:
             glVertex3fv(v[i])
     glEnd()
     glEndList()
-
-def rysuj_obrocony_prostopadloscian(x, y, z, szerokosc, wysokosc, glebokosc, r, g, b, rot_x=0, rot_y=0, rot_z=0):
+#inicjacja prostopadloscianu
+def rysuj_prostopadloscian(x, y, z, szerokosc, wysokosc, glebokosc, r, g, b, rot_x=0, rot_y=0, rot_z=0):
     glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, [r, g, b, 1.0])
     glColor3f(r, g, b)
     glPushMatrix()
@@ -93,12 +101,14 @@ def rysuj_obrocony_prostopadloscian(x, y, z, szerokosc, wysokosc, glebokosc, r, 
     glTranslatef(0, wysokosc / 2.0, 0)
     glScalef(szerokosc / 2.0, wysokosc / 2.0, glebokosc / 2.0)
     
-    if id_szescianu_gpu is not None:
-        glCallList(id_szescianu_gpu)
+    if id_szescianu is not None:
+        glCallList(id_szescianu)
         
     glPopMatrix()
-
-class WodaGPU:
+#model wody
+#gestosc to jak bardzo ma byc szczegolowy model wody
+#szerkosc i dlugosc to osie x i y (wyamiry)
+class Woda:
     def __init__(self, szerokosc, dlugosc, gestosc):
         self.gestosc = gestosc
         self.count = gestosc * gestosc * 4
@@ -118,7 +128,7 @@ class WodaGPU:
         x_vals = self.vertices[:,:,:,0]
         z_vals = self.vertices[:,:,:,2]
         self.vertices[:,:,:,1] = np.sin(x_vals * 0.15 + czas) * stala_falowania + np.cos(z_vals * 0.2 + czas * 0.8) * 0.2
-        
+        #zabawa światłem
         glDisable(GL_LIGHTING)
         glColor4f(r, g, b, 0.9)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
@@ -132,19 +142,14 @@ class WodaGPU:
 
 def rysuj_niebo_i_slonce():
     glDisable(GL_LIGHTING)
-    rysuj_obrocony_prostopadloscian(200, 300, -400, 40, 40, 40, 1.0, 0.9, 0.0)
-    rysuj_obrocony_prostopadloscian(0, -500, 0, 2000, 2000, 2000, 0.2, 0.4, 0.8)
+    rysuj_prostopadloscian(200, 300, -400, 40, 40, 40, 1.0, 0.9, 0.0)
     glEnable(GL_LIGHTING)
 
 def main():
     suwnica_x = 0.0
     pociag_x = 0.0
     wyciag_z = 0.0
-    zejscie_y = 0
-    
-    szer_kontenera = 4.0        
-    wys_kontenera = 4.345       
-    dl_kontenera = 6.9          
+    zejscie_y = 0        
 
     pygame.init()
     display = (1920, 1080)
@@ -152,7 +157,7 @@ def main():
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
     
-    inicjalizuj_szescian_gpu()
+    inicjalizuj_szescian()
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
@@ -189,19 +194,19 @@ def main():
     glLightfv(GL_LIGHT0, GL_POSITION, [200, 300, -400, 1])
     glFogfv(GL_FOG_COLOR, niebo_kolor)
 
-    woda_obj = WodaGPU(1400, 1200, 40)
+    woda_obj = Woda(1400, 1200, 200)
 
     id_lodzi = None
     try:
-        dane = wczytaj_stl('models/CargoShip.stl')
-        id_lodzi = przygotuj_model_gpu(dane)
+        dane = wczytaj_stl('./models/CargoShip.stl')
+        id_lodzi = przygotuj_model(dane)
     except:
         print("Nie znaleziono pliku CargoShip.stl!")
 
     id_kontenera = None
     try:
-        dane = wczytaj_stl('models/Container.stl')
-        id_kontenera = przygotuj_model_gpu(dane)
+        dane = wczytaj_stl('./models/Container.stl')
+        id_kontenera = przygotuj_model(dane)
     except:
         print("Nie znaleziono pliku Container.stl!")
 
@@ -211,8 +216,7 @@ def main():
             if e.type == QUIT or (e.type == KEYDOWN and e.key == K_ESCAPE):
                 pygame.quit()
                 return
-
-        # === 1. GLOBALNA SYNCHRONIZACJA POZYCJI CHWYTAKA W ŚWIECIE ===
+        #ustawienie chywtaka
         chwytak_x = 7.5 + suwnica_x
         chwytak_z = 28.0 + wyciag_z
         chwytak_y = 46.0 - zejscie_y
@@ -226,7 +230,7 @@ def main():
         keys = pygame.key.get_pressed()
         rad = math.radians(rot_y)
         spd = 0.8 
-        
+        #sterowanie kamerą
         if keys[K_w] or keys[K_UP]:
             cam_x += math.sin(rad) * spd
             cam_z -= math.cos(rad) * spd
@@ -238,7 +242,7 @@ def main():
             cam_z -= math.sin(rad) * spd
         if keys[K_d]:
             cam_x += math.cos(rad) * spd
-            cam_z -= math.sin(rad) * spd
+            cam_z += math.sin(rad) * spd
         if keys[K_SPACE]:  cam_y += spd
         if keys[K_LSHIFT]: cam_y -= spd
 
@@ -249,8 +253,6 @@ def main():
 
         if keys[K_n]: pociag_x += 0.1
         if keys[K_m]: pociag_x -= 0.1
-
-        # === 2. POPRAWIONE I DOKŁADNE TESTY KOLIZJI RUCHU (AABB) ===
         
         # Suwnica w lewo
         if keys[K_LEFT]:
@@ -335,19 +337,14 @@ def main():
         glRotatef(rot_y, 0, 1, 0)
         glTranslatef(-cam_x, -cam_y, -cam_z)
 
-        # Pociąg
+        # Pociag
         glPushMatrix() 
         glTranslatef(pociag_x, 0, 0)
-        rysuj_obrocony_prostopadloscian(23.375, 0.5, 12.5, 15, 5, 5, 0.9, 0.1, 0.1)
-        for nr in range(0, 10):
-            przes=nr*15.875
-            rysuj_obrocony_prostopadloscian(7.5 - przes, 0.5, 12.5, 15, 1, 5, 0.0, 0.0, 0.5)
-            rysuj_obrocony_prostopadloscian(15.5 - przes, 0.75, 12.5, 1, 0.5, 0.5, 0.1, 0.1, 0.1)
+        rysuj_prostopadloscian(23.375, 0.5, 12.5, 15, 5, 5, 0.9, 0.1, 0.1)
+        rysuj_prostopadloscian(7.5, 0.5, 12.5, 15, 1, 5, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(15.5, 0.75, 12.5, 1, 0.5, 0.5, 0.1, 0.1, 0.1)
         glPopMatrix()
 
-        # Tory
-        rysuj_obrocony_prostopadloscian(0, 0.1, 14.4, 200, 0.2, 0.2, 0, 0, 0)
-        rysuj_obrocony_prostopadloscian(0, 0.1, 10.6, 200, 0.2, 0.2, 0, 0, 0)
 
         # Konstrukcja suwnicy
         glPushMatrix() 
@@ -356,111 +353,111 @@ def main():
         glPushMatrix() 
         glTranslatef(0, 0, wyciag_z)
         
-        # Wyciąg i lina
-        rysuj_obrocony_prostopadloscian(7.5, 48, 28, 10, 3, 7.5, 0.6, 0.6, 0.6)
+        # Wyciag i lina
+        rysuj_prostopadloscian(7.5, 48, 28, 10, 3, 7.5, 0.6, 0.6, 0.6)
         for i in range(1, int(zejscie_y*10)):
             if i % 10 == 0:
-                rysuj_obrocony_prostopadloscian(7.5, 48 - (i/10), 28, 0.3, 0.5, 0.3, 0, 0.9, 0.9)
+                rysuj_prostopadloscian(7.5, 48 - (i/10), 28, 0.3, 0.5, 0.3, 0, 0.9, 0.9)
         
         glPushMatrix() 
         glTranslatef(0, -zejscie_y, 0)
         
-        # === POPRAWIONE WIZUALNE WYKRYWANIE KOLIZJI CHWYTAKA ===
+        #wykrywanie kolizji chwytaka z kontenerem
         mozna_podniesc = False
         y_renderu = 46
         
         for kx, kz, ky in siatka_kontenerow:
             realne_kontener_y = 8.2 + bujanie + ky
             if (chwytak_y - 5 < realne_kontener_y):
-                if (abs(kx - chwytak_x) < 40.0 and abs(kz - chwytak_z) < 30):
+                if (abs(kx - chwytak_x) < 8 and abs(kz - chwytak_z) < 8):
                     mozna_podniesc = True
                     y_renderu = 46 + bujanie
-                    print("aaa")
+                    #print("aaa")
                     break
                 
         if mozna_podniesc:
-            # ŻÓŁTY chwytak, gdy wykryto bliskość kontenera
-            rysuj_obrocony_prostopadloscian(7.5, y_renderu, 28, 10, 3, 5.5, 1.0, 1.0, 0.0)
+            # zolty kolor gdy blisko
+            rysuj_prostopadloscian(7.5, y_renderu, 28, 10, 3, 5.5, 1.0, 1.0, 0.0)
         else:
-            # RÓŻOWY chwytak w stanie normalnym
-            rysuj_obrocony_prostopadloscian(7.5, 46, 28, 10, 3, 5.5, 0.9, 0.2, 0.6)
+            # rozowy gdy daleko
+            rysuj_prostopadloscian(7.5, 46, 28, 10, 3, 5.5, 0.9, 0.2, 0.6)
             
         glPopMatrix()
         glPopMatrix()
 
-        # Reszta szkieletu suwnicy
-        rysuj_obrocony_prostopadloscian(0, 0, 0, 1, 52, 1, 0.0, 0.0, 0.5)
-        rysuj_obrocony_prostopadloscian(15, 0, 0, 1, 52, 1, 0.0, 0.0, 0.5)
-        rysuj_obrocony_prostopadloscian(0, 0, 25, 1, 52, 1, 0.0, 0.0, 0.5)
-        rysuj_obrocony_prostopadloscian(15, 0, 25, 1, 52, 1, 0.0, 0.0, 0.5)
+        # suwnica
+        rysuj_prostopadloscian(0, 0, 0, 1, 52, 1, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(15, 0, 0, 1, 52, 1, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(0, 0, 25, 1, 52, 1, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(15, 0, 25, 1, 52, 1, 0.0, 0.0, 0.5)
         
-        rysuj_obrocony_prostopadloscian(0, 10, 12.5, 1, 3, 26, 0.0, 0.0, 0.5)
-        rysuj_obrocony_prostopadloscian(15, 10, 12.5, 1, 3, 26, 0.0, 0.0, 0.5)
-        rysuj_obrocony_prostopadloscian(0, 25, 12.5, 0.5, 0.5, 26, 0.0, 0.0, 0.5)
-        rysuj_obrocony_prostopadloscian(15, 25, 12.5, 0.5, 0.5, 26, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(0, 10, 12.5, 1, 3, 26, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(15, 10, 12.5, 1, 3, 26, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(0, 25, 12.5, 0.5, 0.5, 26, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(15, 25, 12.5, 0.5, 0.5, 26, 0.0, 0.0, 0.5)
 
-        rysuj_obrocony_prostopadloscian(0, 19, 6, 0.5, 0.5, 18, 0.0, 0.0, 0.5, rot_x=45)
-        rysuj_obrocony_prostopadloscian(15, 19, 6, 0.5, 0.5, 18, 0.0, 0.0, 0.5, rot_x=45)
-        rysuj_obrocony_prostopadloscian(0, 19, 19, 0.5, 0.5, 18, 0.0, 0.0, 0.5, rot_x=-45)
-        rysuj_obrocony_prostopadloscian(15, 19, 19, 0.5, 0.5, 18, 0.0, 0.0, 0.5, rot_x=-45)
+        rysuj_prostopadloscian(0, 19, 6, 0.5, 0.5, 18, 0.0, 0.0, 0.5, rot_x=45)
+        rysuj_prostopadloscian(15, 19, 6, 0.5, 0.5, 18, 0.0, 0.0, 0.5, rot_x=45)
+        rysuj_prostopadloscian(0, 19, 19, 0.5, 0.5, 18, 0.0, 0.0, 0.5, rot_x=-45)
+        rysuj_prostopadloscian(15, 19, 19, 0.5, 0.5, 18, 0.0, 0.0, 0.5, rot_x=-45)
 
-        rysuj_obrocony_prostopadloscian(0, 37.5, 12, 0.5, 0.8, 35, 0.0, 0.0, 0.5, rot_x=45)
-        rysuj_obrocony_prostopadloscian(15, 37.5, 12, 0.5, 0.8, 35, 0.0, 0.0, 0.5, rot_x=45)
+        rysuj_prostopadloscian(0, 37.5, 12, 0.5, 0.8, 35, 0.0, 0.0, 0.5, rot_x=45)
+        rysuj_prostopadloscian(15, 37.5, 12, 0.5, 0.8, 35, 0.0, 0.0, 0.5, rot_x=45)
 
-        rysuj_obrocony_prostopadloscian(7.5, 0, 0, 16, 1, 1, 0.8, 0.3, 0.6)
-        rysuj_obrocony_prostopadloscian(7.5, 0, 25, 16, 1, 1, 0.8, 0.3, 0.6)
+        rysuj_prostopadloscian(7.5, 0, 0, 16, 1, 1, 0.8, 0.3, 0.6)
+        rysuj_prostopadloscian(7.5, 0, 25, 16, 1, 1, 0.8, 0.3, 0.6)
 
         for z_pos in range(30, 100, 20):
-            rysuj_obrocony_prostopadloscian(2, 49, z_pos, 1, 3, 10, 0.9, 0, 0)
-            rysuj_obrocony_prostopadloscian(13, 49, z_pos, 1, 3, 10, 0.9, 0, 0)
+            rysuj_prostopadloscian(2, 49, z_pos, 1, 3, 10, 0.9, 0, 0)
+            rysuj_prostopadloscian(13, 49, z_pos, 1, 3, 10, 0.9, 0, 0)
             if z_pos + 10 <= 90:
-                rysuj_obrocony_prostopadloscian(2, 49, z_pos + 10, 1, 3, 10, 1, 1, 1)
-                rysuj_obrocony_prostopadloscian(13, 49, z_pos + 10, 1, 3, 10, 1, 1, 1)
+                rysuj_prostopadloscian(2, 49, z_pos + 10, 1, 3, 10, 1, 1, 1)
+                rysuj_prostopadloscian(13, 49, z_pos + 10, 1, 3, 10, 1, 1, 1)
 
         if math.floor(t) % 4 == 0:
             kolor_swiatla = (1, 1, 1) 
         else:
             kolor_swiatla = (0, 0, 0)  
             
-        rysuj_obrocony_prostopadloscian(2, 51.8, 94.8, 0.4, 0.4, 0.4, *kolor_swiatla)
-        rysuj_obrocony_prostopadloscian(13, 51.8, 94.8, 0.4, 0.4, 0.4, *kolor_swiatla)
-        rysuj_obrocony_prostopadloscian(7.5, 80, 25, 2, 2, 2, *kolor_swiatla)
+        rysuj_prostopadloscian(2, 51.8, 94.8, 0.4, 0.4, 0.4, *kolor_swiatla)
+        rysuj_prostopadloscian(13, 51.8, 94.8, 0.4, 0.4, 0.4, *kolor_swiatla)
+        rysuj_prostopadloscian(7.5, 80, 25, 2, 2, 2, *kolor_swiatla)
 
-        rysuj_obrocony_prostopadloscian(2, 49, 12.5, 1.01, 3.01, 25, 0.0, 0.0, 0.5)
-        rysuj_obrocony_prostopadloscian(13, 49, 12.5, 1.01, 3.01, 25, 0.0, 0.0, 0.5)
-        rysuj_obrocony_prostopadloscian(7.5, 49, -30, 12, 3, 1, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(2, 49, 12.5, 1.01, 3.01, 25, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(13, 49, 12.5, 1.01, 3.01, 25, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(7.5, 49, -30, 12, 3, 1, 0.0, 0.0, 0.5)
 
-        rysuj_obrocony_prostopadloscian(7.5, 49, 25, 16, 3, 1, 0.0, 0.0, 0.5)
-        rysuj_obrocony_prostopadloscian(7.5, 52, 0.5, 16, 3, 2,  0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(7.5, 49, 25, 16, 3, 1, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(7.5, 52, 0.5, 16, 3, 2,  0.0, 0.0, 0.5)
         
-        rysuj_obrocony_prostopadloscian(2, 49, -15, 1.01, 3.01, 30, 0.0, 0.0, 0.5)
-        rysuj_obrocony_prostopadloscian(13, 49, -15, 1.01, 3.01, 30, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(2, 49, -15, 1.01, 3.01, 30, 0.0, 0.0, 0.5)
+        rysuj_prostopadloscian(13, 49, -15, 1.01, 3.01, 30, 0.0, 0.0, 0.5)
 
-        rysuj_obrocony_prostopadloscian(4.25, 66, 25, 29.5, 1, 1, 0.0, 0.0, 0.5, rot_z=75.5)
-        rysuj_obrocony_prostopadloscian(10.75 , 66, 25, 29.5, 1, 1, 0.0, 0.0, 0.5, rot_z=-75.5)
-        rysuj_obrocony_prostopadloscian(7.5, 67, 13, 1.5, 1.5, 35.5, 0.0, 0.0, 0.5, rot_x=-46)
-        rysuj_obrocony_prostopadloscian(7.5, 66, -2, 0.7, 0.7, 62, 0.0, 0.0, 0.5, rot_x=-28)
+        rysuj_prostopadloscian(4.25, 66, 25, 29.5, 1, 1, 0.0, 0.0, 0.5, rot_z=75.5)
+        rysuj_prostopadloscian(10.75 , 66, 25, 29.5, 1, 1, 0.0, 0.0, 0.5, rot_z=-75.5)
+        rysuj_prostopadloscian(7.5, 67, 13, 1.5, 1.5, 35.5, 0.0, 0.0, 0.5, rot_x=-46)
+        rysuj_prostopadloscian(7.5, 66, -2, 0.7, 0.7, 62, 0.0, 0.0, 0.5, rot_x=-28)
 
-        rysuj_obrocony_prostopadloscian(10.5, 66, 38, 0.3, 0.3, 39.5, 1, 0.0, 0, rot_x=47, rot_y=8)
-        rysuj_obrocony_prostopadloscian(4.5, 66, 38, 0.3, 0.3, 39.5, 1, 0.0, 0, rot_x=47, rot_y=-8)
-        rysuj_obrocony_prostopadloscian(10.5, 66, 55, 0.3, 0.3, 66, 1, 0.0, 0, rot_x=25.75, rot_y=5)
-        rysuj_obrocony_prostopadloscian(4.5, 66, 55, 0.3, 0.3, 66, 1, 0.0, 0, rot_x=25.75, rot_y=-5)
+        rysuj_prostopadloscian(10.5, 66, 38, 0.3, 0.3, 39.5, 1, 0.0, 0, rot_x=47, rot_y=8)
+        rysuj_prostopadloscian(4.5, 66, 38, 0.3, 0.3, 39.5, 1, 0.0, 0, rot_x=47, rot_y=-8)
+        rysuj_prostopadloscian(10.5, 66, 55, 0.3, 0.3, 66, 1, 0.0, 0, rot_x=25.75, rot_y=5)
+        rysuj_prostopadloscian(4.5, 66, 55, 0.3, 0.3, 66, 1, 0.0, 0, rot_x=25.75, rot_y=-5)
 
-        rysuj_obrocony_prostopadloscian(7.5, 50, -8, 10, 10, 15, 1, 1, 1)
+        rysuj_prostopadloscian(7.5, 50, -8, 10, 10, 15, 1, 1, 1)
         glPopMatrix()
 
-        # Otoczenie, port i woda
+        # Otoczenie port i woda
         glLightfv(GL_LIGHT0, GL_AMBIENT, [0.3, 0.3, 0.3, 1])
-        rysuj_obrocony_prostopadloscian(0, -30, -45, 200, 30, 150, 0.8, 0.8, 0.8)
-        rysuj_obrocony_prostopadloscian(0, 0, 28, 200, 2, 4, 0.6, 0.6, 0.6)
+        rysuj_prostopadloscian(0, -30, -45, 200, 30, 150, 0.8, 0.8, 0.8)
+        rysuj_prostopadloscian(0, 0, 28, 200, 2, 4, 0.6, 0.6, 0.6)
 
-        rysuj_obrocony_prostopadloscian(30, 0, 0, 120, 0.1, 1, 0.3, 0, 0)
-        rysuj_obrocony_prostopadloscian(30, 0, 25, 120, 0.1, 1, 0.3, 0, 0)
+        rysuj_prostopadloscian(30, 0, 0, 120, 0.1, 1, 0.3, 0, 0)
+        rysuj_prostopadloscian(30, 0, 25, 120, 0.1, 1, 0.3, 0, 0)
         
         glLightfv(GL_LIGHT0, GL_AMBIENT, [0.3, 0.3, 0.3, 1])
         lampka=-90
         for i in range(0, 20):
-            rysuj_obrocony_prostopadloscian(lampka, 2, 28, 0.7, 0.7, 0.7, 0.7, 0.4, 0)
+            rysuj_prostopadloscian(lampka, 2, 28, 0.7, 0.7, 0.7, 0.7, 0.4, 0)
             lampka+=10
 
         glPushMatrix()
@@ -475,14 +472,14 @@ def main():
         rysuj_niebo_i_slonce()
         glPopMatrix()
 
-        # Statek cargo i kontenery
+        #statek i kontenery
         if id_lodzi is not None:
             bujanie = math.sin(t * 0.5) * stala_falowania 
-            rysuj_model_gpu(id_lodzi, 30, -5 + bujanie, 80, 0.5, 0.3, 0.1, skala=0.8, rot_x=-90, rot_z=90)
+            rysuj_model(id_lodzi, 30, -5 + bujanie, 80, 0.5, 0.3, 0.1, skala=0.8, rot_x=-90, rot_z=90)
             i=0
             if id_kontenera is not None:
                 for k_x, k_z, k_y in siatka_kontenerow:
-                    rysuj_model_gpu(
+                    rysuj_model(
                         id_kontenera, 
                         k_x, 8.2 + bujanie + k_y, k_z, 
                         kolory[i][0], kolory[i][1], kolory[i][2],
@@ -493,7 +490,6 @@ def main():
                     i+=1
                 
         pygame.display.flip()
-        clock.tick(60)
-
+        clock.tick(120)
 if __name__ == "__main__":
     main()
