@@ -99,7 +99,7 @@ def rysuj_niebo_i_slonce():
     rysuj_prostopadloscian(200, 300, -400, 40, 40, 40, 1.0, 0.9, 0.0)
     glEnable(GL_LIGHTING)
 
-# Klasa pomocnicza do renderowania tekstu 2D jako tekstury w OpenGL
+
 class RenderTekstu:
     def __init__(self):
         pygame.font.init()
@@ -124,9 +124,8 @@ class RenderTekstu:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, szerokosc, wysokosc, 0, GL_RGBA, GL_UNSIGNED_BYTE, dane_tekstury)
 
+
         glEnable(GL_TEXTURE_2D)
-        
-        # POPRAWKA WIDOCZNOŚCI: Reset koloru do pełnej bieli, aby OpenGL nie przyciemniał tekstu
         glColor4f(1.0, 1.0, 1.0, 1.0) 
         
         glBegin(GL_QUADS)
@@ -157,19 +156,21 @@ def wyjdz_z_trybu_2d():
     glMatrixMode(GL_MODELVIEW)
     glPopMatrix()
 
-def rysuj_interfejs_2d(szerokosc, wysokosc, renderer, pokaz_pomoc):
-    wejdz_w_tryb_2d(szerokosc, wysokosc)
 
+def rysuj_interfejs_2d(szerokosc, wysokosc, renderer, pokaz_pomoc):
+
+
+    wejdz_w_tryb_2d(szerokosc, wysokosc)
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    # 1. Rysowanie komunikatu na ŚRODKU EKRANU (jeśli menu pomocy nie jest otwarte)
+
     if not pokaz_pomoc:
         box_w, box_h = 360, 50
         box_x = szerokosc - 600
         box_y = wysokosc - 200
 
-        # Ciemne, kontrastowe tło ramki
+
         glColor4f(0.05, 0.05, 0.1, 0.5)
         glBegin(GL_QUADS)
         glVertex2f(box_x, box_y)
@@ -188,16 +189,13 @@ def rysuj_interfejs_2d(szerokosc, wysokosc, renderer, pokaz_pomoc):
         glVertex2f(box_x, box_y + box_h)
         glEnd()
 
-        # Biały, czytelny tekst wycentrowany w ramce
         renderer.rysuj_tekst("Naciśnij [ F1 ], aby przeczytać instrukcję", box_x + 28, box_y + 13, kolor=(255, 255, 255), male=False)
 
-    # 2. Półprzeźroczyste okno pomocy na środku ekranu (po kliknięciu F1)
     else:
         okno_w, okno_h = 560, 420
         okno_x = (szerokosc - okno_w) // 2
         okno_y = (wysokosc - okno_h) // 2
 
-        # Tło okna instrukcji
         glColor4f(0.05, 0.05, 0.1, 0.9)
         glBegin(GL_QUADS)
         glVertex2f(okno_x, okno_y)
@@ -206,7 +204,6 @@ def rysuj_interfejs_2d(szerokosc, wysokosc, renderer, pokaz_pomoc):
         glVertex2f(okno_x, okno_y + okno_h)
         glEnd()
 
-        # Ramka okna instrukcji
         glColor4f(0.0, 0.7, 0.9, 0.9)
         glLineWidth(3)
         glBegin(GL_LINE_LOOP)
@@ -216,7 +213,6 @@ def rysuj_interfejs_2d(szerokosc, wysokosc, renderer, pokaz_pomoc):
         glVertex2f(okno_x, okno_y + okno_h)
         glEnd()
 
-        # Linie tekstu wewnątrz okna pomocy
         y_offset = okno_y + 20
         renderer.rysuj_tekst("INSTRUKCJA SYMULATORA PORTU", okno_x + 70 + 30, y_offset, kolor=(0, 255, 255))
         
@@ -338,8 +334,8 @@ class Chwytak:
         for idx, (kx, kz, ky) in enumerate(siatka_kontenerow):
             realne_y = 8.2 + bujanie + ky
             gora     = realne_y + 3.0
-            if (abs((kx - 3) - self.x) < 4.0 and
-                abs((kz - 1) - self.z) < 4.0 and
+            if (abs((kx - 5) - self.x) < 1.0 and
+                abs((kz - 2) - self.z) < 1.0 and
                 chwytak_dol > gora - 1.0 and
                 chwytak_dol < gora + 1.0):
                 self.podniesiony_idx    = idx
@@ -373,19 +369,20 @@ class Chwytak:
         for kx, kz, ky in siatka_kontenerow:
             realne_y = 8.2 + bujanie + ky
             gora     = realne_y + 3.0
-            if (abs((kx - 3) - self.x) < 2.0 and
-                abs((kz - 1) - self.z) < 2.0 and
+            if (abs((kx - 5) - self.x) < 1.0 and
+                abs((kz - 2) - self.z) < 1.0 and
                 chwytak_dol > gora - 1.0 and
                 chwytak_dol < gora + 1.0):
                 mozna_podniesc = True
                 y_renderu = 46 + bujanie
                 break
 
+        # POPRAWKA: Chwytak świeci na turkusowo tylko wtedy, gdy jest nad tirem I odpowiednio nisko
         mozna_odlozyc_na_tira = False
         if self.podniesiony_idx is not None and tir is not None:
             render_x = self.x + 5
             render_z = self.z + 2
-            if tir.czy_kontener_trafia(render_x, render_z):
+            if tir.czy_kontener_trafia(render_x, render_z) and self.zejscie_y >= 32.0:
                 mozna_odlozyc_na_tira = True
 
         if mozna_odlozyc_na_tira:
@@ -634,7 +631,7 @@ class Tir:
         if self.ma_kontener and self.kontener_id is not None:
             r, g, b = self.kontener_kolor
             glPushMatrix()
-            glTranslatef(self.x, 4.5, 14)
+            glTranslatef(self.x, 4.5, 13.5)
             glRotatef(-90, 1, 0, 0)
             glRotatef(90,  0, 0, 1)
             glScalef(0.24, 0.24, 0.24)
@@ -790,14 +787,13 @@ def main():
     clock = pygame.time.Clock()
     t     = 0.0
 
-    # Stan instrukcji i automatyzacji
     pokaz_pomoc = False
     tryb_auto = False
     auto_stan = 0
     target_suwnica_x = 0.0
     target_suwnica_wyciag = 0.0
 
-    # Prędkości dla trybu automatycznego
+
     PREDKOSC_AUTO_X = 0.05
     PREDKOSC_AUTO_Z = 0.1
 
@@ -822,12 +818,16 @@ def main():
                         else:
                             render_x = ch.x + 5
                             render_z = ch.z + 2
-                            if tir.czy_kontener_trafia(render_x, render_z):
+                            
+                            # POPRAWKA: Sprawdzamy czy trafia w Tira ORAZ czy wysokość chwytaka (zejscie_y) jest odpowiednio niska (tuż nad naczepą)
+
+                            if tir.czy_kontener_trafia(render_x, render_z) and ch.zejscie_y >= 37.0:
                                 kolor = statek.kolory[ch.podniesiony_idx]
                                 if tir.poloz_kontener(kolor):
                                     statek.siatka_kontenerow.pop(ch.podniesiony_idx)
                                     statek.kolory.pop(ch.podniesiony_idx)
-                            ch.upusc()
+
+                                    ch.upusc() # Przeniesione tutaj - puszcza tylko po udanym zrzucie na ciężarówkę
 
                 if e.key == K_r:
                     suwnica.chwytak.upusc()
@@ -981,7 +981,8 @@ def main():
         statek.rysuj(ch.podniesiony_idx, ch.x, ch.y, ch.z, ch.podniesiony_offset)
         port.rysuj(t, kamera)
 
-        # RENDEROWANIE INTERFEJSU 2D (NOWA RAMKA NA ŚRODKU)
+
+        # RENDEROWANIE INTERFEJSU 2D
         rysuj_interfejs_2d(display[0], display[1], renderer_tekstu, pokaz_pomoc)
 
         pygame.display.flip()
